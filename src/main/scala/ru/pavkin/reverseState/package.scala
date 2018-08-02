@@ -1,24 +1,24 @@
 package ru.pavkin
 
-import cats.{Eval, Monoid, Traverse}
 import cats.data.State
-import ru.pavkin.reverseState.Demo.double
 import cats.syntax.semigroup._
+import cats.{Monoid, Traverse}
 
 import scala.language.higherKinds
 
 package object reverseState {
 
+  def dup[T](x: T): (T, T) = (x, x)
+
   def cumulative[T[_], W](input: T[W])(implicit M: Monoid[W],
                                        T: Traverse[T]): T[W] =
-    T.traverse(input)(v => State[W, W](x => double(x |+| v)))
+    T.traverse(input)(b => State[W, W](s => dup(s |+| b)))
       .runA(M.empty)
       .value
 
-  def reverseCumulativeR[T[_], W](input: T[W])(implicit M: Monoid[W],
-                                               T: Traverse[T]): T[W] =
-    T.traverse(input)(v =>
-        ReverseState[W, W](x => Eval.later(double(v |+| x))))
+  def cumulativeR[T[_], W](input: T[W])(implicit M: Monoid[W],
+                                        T: Traverse[T]): T[W] =
+    T.traverse(input)(b => ReverseState[W, W](s => dup(b |+| s)))
       .runA(M.empty)
       .value
 
