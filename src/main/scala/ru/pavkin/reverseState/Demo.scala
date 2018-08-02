@@ -1,5 +1,6 @@
 package ru.pavkin.reverseState
 
+import cats.Eval
 import cats.data.State
 import cats.instances.int._
 import cats.instances.list._
@@ -35,9 +36,21 @@ object Demo extends App {
       State {
         case (sum, count) =>
           ((sum + elem, count + 1), (sum + elem) / (count + 1))
-    },
+      },
     (0.0, 0))
   // List(6.833333333333333, 7.8, 9.0, 10.333333333333334, 12.0, 13.0)
   mean.scanRight(intList.map(_.toDouble))
+
+  val dupl =
+    LazyReverseState[String, Int](s => (s.map(v => v + v), s.map(_.length)))
+  val addA =
+    LazyReverseState[String, Int](s => (s.map(_ + "A"), Eval.later(1)))
+
+  val program = dupl.flatMap(_ => addA)
+
+  val (stEval, vEval) = program.run(Eval.later("dumb")).value
+  // hangs!!!
+  //  println(stEval.value)
+  //  println(vEval.value)
 
 }
